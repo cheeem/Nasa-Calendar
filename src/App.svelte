@@ -937,38 +937,14 @@ const arr = [
 
 <style>
 
-  
-  .hover-display {
-    z-index: 3;
-
-    position: absolute;
-    bottom: 0;
-    left: 0;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-
-    padding: 0.2em 0.3em;
-
-    width: 100%;
-    height: 0;
-
-    font-size: 0.7em;
-
-    transition: height 0.3s ease;
-
-    cursor: pointer;
-  }
-
   main {
     display: flex;
     justify-content: space-between;
     gap: 6.5vw;
 
-    min-height: 100vh;
+    height: 100vh;
 
-    padding: 4vw 6.5vw;
+    padding: 4vh 6.5vw;
 
     background-color: var(--dark);
   }
@@ -978,9 +954,9 @@ const arr = [
     flex-direction: column;
     gap: 1.5em;
 
-    font-size: 1vw;
+    width: 25vw;
 
-    max-width: 30%;
+    font-size: 1vw;
   }
 
   .heading * {
@@ -1035,12 +1011,10 @@ const arr = [
     flex-direction: column;
     gap: 1em;
 
-    width: 100%;
-
     margin-top: auto;
   }
 
-  .info h2 {
+  .info h2, .info h5 {
     width: fit-content;
   }
 
@@ -1053,8 +1027,7 @@ const arr = [
 
     position: relative;
 
-    height: 45vh;
-    max-width: 100%;
+    height: 50vh;
 
     border: 0.15em solid var(--white);
     border-radius: 0.3em;
@@ -1092,7 +1065,7 @@ const arr = [
     grid-template-rows: 6vh repeat(5, 1fr);
     gap: 0.6em;
 
-    width: 50vw;
+    min-width: 50%;
 
     font-size: min(1.5vw, 2.2vh);
   }
