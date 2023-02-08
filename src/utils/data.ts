@@ -19,4 +19,4 @@ export const format_month  = (date: Date): string => new Intl.DateTimeFormat(`de
     year: `numeric`,
 }).format(date)
 
-export const get_offset_date = (offset: number): Date => new Date(new Date().setMonth(new Date().getMonth() + offset))
+export const get_offset_date = (offset: number): Date => new Date(new Date().setMonth(new Date().getMonth() - offset))

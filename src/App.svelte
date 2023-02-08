@@ -15,14 +15,9 @@
 
   import { fade } from 'svelte/transition'
 
+  let cache: Object[][] = [];
+
   let offset: number = 0
-  
-  let selected = {
-    title: ``,
-    url: ``,
-    copyright: ``,
-    explanation: ``,
-  }
 
   let first_day: Date
   let last_day: Date
@@ -31,11 +26,20 @@
   $: last_day =  get_last_day(get_offset_date(offset))
   $: max_day = last_day > new Date() ? new Date() : last_day
 
+  let selected = {
+    title: ``,
+    url: ``,
+    copyright: ``,
+    explanation: ``,
+  }
+
   const process = async res => {
 
     const apods = await res
 
     selected = apods[apods.length-1]
+
+    cache[offset] = apods;
 
     return apods
 
@@ -56,15 +60,15 @@
     
     <div class="controls"> 
       <button class="up {!offset && `disabled`}"
-        on:click={() => offset += offset ? 1 : 0}
-        on:keydown={() => offset += offset ? 1 : 0}
+        on:click={() => offset -= offset ? 1 : 0}
+        on:keydown={() => offset -= offset ? 1 : 0}
       >
         <img src={svg_caret_up} alt="" />
         <p> Next Month </p>
       </button>
       <button class="down"
-        on:click={() => offset -= 1}
-        on:keydown={() => offset -= 1}
+        on:click={() => offset += 1}
+        on:keydown={() => offset += 1}
       >
         <img src={svg_caret_down} alt="" />
         <p> Previous Month </p>
@@ -98,7 +102,7 @@
     <li class="day-label">Friday</li>
     <li class="day-label">Saturday</li>
 
-    {#await process(query(`&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`))}
+    {#await cache?.[offset] ?? process(query(`&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`))}
       
     {#each { length: max_day.getDate() } as _, i}
         <li class="day" style={
