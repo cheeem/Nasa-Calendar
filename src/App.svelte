@@ -49,7 +49,9 @@
 
     <div class="heading"> 
       <h4> NASA Astronomy Picture of the Day Calendar</h4>
+      {#key first_day}
       <h1> {format_month(first_day)} </h1>
+      {/key}
     </div>
     
     <div class="controls"> 
@@ -69,17 +71,18 @@
       </button>
     </div>
 
-    <div class="info"> 
-      <h2> {selected.title} </h2>
-      <h5> {selected.copyright ?? ``} </h5>
-      <div class="selected-display">
-        <img src={selected.url} alt="" />
-        <div class="hover-display"> 
-          <p> {selected.explanation} </p>
-        </div>
+      <div class="info"> 
+          <h2> {selected.title} </h2>
+          <h5> {selected.copyright ?? ``} </h5>
+          <div class="selected-display">
+            {#key selected}
+              <img src={selected.url} alt="" in:fade />
+            {/key}
+            <div class="hover-display"> 
+              <p> {selected.explanation} </p>
+            </div>
+          </div>
       </div>
-
-    </div>
   
   </div>
 
@@ -96,61 +99,45 @@
     <li class="day-label">Saturday</li>
 
     {#await process(query(`&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`))}
-
-      {#each { length: max_day.getDate() } as _, i}
-
+      
+    {#each { length: max_day.getDate() } as _, i}
         <li class="day" style={
           !i && `grid-column-start: ${first_day.getDay()}
         `}>
-        
           <p class="index"> {i + 1} </p>
-
           <img src={loading} alt="" />
-
         </li>
-
         {/each}
 
     {:then apods}
-
+      
       {#each apods as apod, i}
-
         <li class="day can-hover" in:fade style={
           !i && `grid-column-start: ${first_day.getDay()}
         `}
           on:click={() => selected = apod}
           on:keydown={() => selected = apod}
         >
-          
-          <p class="index"> {i + 1} </p>
-          
+          <p class="index"> {i + 1} </p> 
           <img src={apod.url} alt="" />
-
           <div class="hover-display"> 
             <p class="title"> {apod.title} </p>
             <p class="date"> {apod.date} </p>
           </div>
-
         </li>
+      {/each} 
 
-      {/each}
-        
     {/await}
-
+    
     {#each { length: last_day.getDate() - max_day.getDate() } as _, i}
-
       <li class="day" style={
         !i && `grid-column-start: ${first_day.getDay()}
-      `}>
-      
+      `}>    
         <p class="index"> {i + 1 + max_day.getDate()} </p>
-
         <img alt="" />
-
       </li>
+    {/each} 
 
-    {/each}
-    
   </ol>
 
 </main>
@@ -193,9 +180,29 @@
   }
 
   h1 {
+    overflow: hidden;
+
+    margin: 0 auto 0 0;
+
     font-size: 3em;
 
+    border-right: .15em solid var(--white);
+
     translate: -0.06em 0;
+
+    animation: 
+      typing 0.75s steps(13, end),
+      blink-caret 0.75s step-end infinite;
+  }
+
+  @keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+  }
+
+  @keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: var(--white) }
   }
 
   .controls {
@@ -232,6 +239,10 @@
 
   button p {
     font-weight: 400;
+  }
+
+  button:not(.disabled):hover p {
+    text-decoration: underline;
   }
 
   .info {    
