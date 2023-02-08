@@ -93,17 +93,17 @@
           <div class="selected-display">
             {#key selected}
               <img src={selected.url} alt="" in:fade />
+              <div class="hover-display"> 
+                <p> {selected.explanation} </p>
+              </div>
             {/key}
-            <div class="hover-display"> 
-              <p> {selected.explanation} </p>
-            </div>
           </div>
       </div>
   
   </div>
 
   <ol class="calendar" style={`
-    grid-template-rows: 6vh repeat(${Math.ceil((first_day.getDay() + last_day.getDate() - 1) / 7)}, 1fr);
+    grid-template-rows: 6vh repeat(${Math.ceil((first_day.getDay() + last_day.getDate()) / 7)}, 1fr);
   `}>
 
     <li class="day-label">Sunday</li>
