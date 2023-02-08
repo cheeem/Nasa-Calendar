@@ -118,7 +118,7 @@
       
     {#each { length: max_day.getDate() } as _, i}
         <li class="day" style={
-          !i && `grid-column-start: ${first_day.getDay()}
+          !i && `grid-column-start: ${first_day.getDay() + 1}
         `}>
           <p class="index"> {i + 1} </p>
           <img src={loading} alt="" />
@@ -131,7 +131,7 @@
         
         {#each apods as apod, i}
           <li class="day can-hover" in:fade style={
-            !i && `grid-column-start: ${first_day.getDay()}
+            !i && `grid-column-start: ${first_day.getDay() + 1}
           `}
             on:click={() => selected = apod}
             on:keydown={() => selected = apod}
