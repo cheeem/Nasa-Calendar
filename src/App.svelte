@@ -15,25 +15,37 @@
 
   import { fade } from 'svelte/transition'
 
-  let cache: Object[][] = [];
+  type APOD = {
+    title: string
+    date: string
+    url: string
+    hdurl: string
+    copyright: string
+    explanation: string
+  }
+
+  let cache: APOD[][] = [];
 
   let offset: number = 0
 
   let first_day: Date
   let last_day: Date
   let max_day: Date
+
   $: first_day = get_first_day(get_offset_date(offset))
   $: last_day =  get_last_day(get_offset_date(offset))
   $: max_day = last_day > new Date() ? new Date() : last_day
 
-  let selected = {
+  let selected: APOD = {
     title: ``,
+    date: ``,
     url: ``,
+    hdurl: ``,
     copyright: ``,
     explanation: ``,
   }
 
-  const process = async res => {
+  const process = async (res: Promise<APOD[]>): Promise<APOD[]> => {
 
     const apods = await res
 
@@ -114,22 +126,26 @@
         {/each}
 
     {:then apods}
-      
-      {#each apods as apod, i}
-        <li class="day can-hover" in:fade style={
-          !i && `grid-column-start: ${first_day.getDay()}
-        `}
-          on:click={() => selected = apod}
-          on:keydown={() => selected = apod}
-        >
-          <p class="index"> {i + 1} </p> 
-          <img src={apod.url} alt="" />
-          <div class="hover-display"> 
-            <p class="title"> {apod.title} </p>
-            <p class="date"> {apod.date} </p>
-          </div>
-        </li>
-      {/each} 
+
+      {#key offset}
+        
+        {#each apods as apod, i}
+          <li class="day can-hover" in:fade style={
+            !i && `grid-column-start: ${first_day.getDay()}
+          `}
+            on:click={() => selected = apod}
+            on:keydown={() => selected = apod}
+          >
+            <p class="index"> {i + 1} </p> 
+            <img src={apod.url} alt="" />
+            <div class="hover-display"> 
+              <p class="title"> {apod.title} </p>
+              <p class="date"> {apod.date} </p>
+            </div>
+          </li>
+        {/each} 
+
+      {/key}
 
     {/await}
     
@@ -171,7 +187,7 @@
     flex-direction: column;
     gap: 1.5em;
 
-    width: 25vw;
+    width: 22.5vw;
 
     font-size: 1vw;
   }
@@ -297,6 +313,7 @@
 
   .selected-display:hover .hover-display {
     height: 100%;
+    opacity: 1;
   }
 
   .selected-display .hover-display::-webkit-scrollbar {
@@ -379,6 +396,7 @@
 
   .can-hover:hover .hover-display {
     height: 100%;
+    opacity: 1;
   }
 
 </style>
