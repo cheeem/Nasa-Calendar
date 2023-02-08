@@ -130,9 +130,7 @@
     {/await}
     
     {#each { length: last_day.getDate() - max_day.getDate() } as _, i}
-      <li class="day" style={
-        !i && `grid-column-start: ${first_day.getDay()}
-      `}>    
+      <li class="day">    
         <p class="index"> {i + 1 + max_day.getDate()} </p>
         <img alt="" />
       </li>
@@ -186,7 +184,7 @@
 
     font-size: 3em;
 
-    border-right: .15em solid var(--white);
+    border-right: .15em solid transparent;
 
     translate: -0.06em 0;
 
@@ -255,10 +253,6 @@
 
   .info h2, .info h5 {
     width: fit-content;
-  }
-
-  .info h5 {
-    height: 1em;
   }
 
   .selected-display {
