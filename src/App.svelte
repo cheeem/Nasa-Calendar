@@ -4,17 +4,18 @@
     get_first_day, 
     get_last_day, 
     format_query_date, 
-    format_month,
     get_offset_date,
   } from './utils/data.js'
 
-  import svg_caret_up from './assets/Caret up.svg'
-  import svg_caret_down from './assets/Caret down.svg'
-  import loading from './assets/loader.gif';
+  import Heading from './Sidebar/Heading.svelte';
+  import Controls from './Sidebar/Controls.svelte'
+  import Selected from './Sidebar/Selected.svelte'
+
+  import DateRange from './Calendar/DateRange.svelte';
 
   import { fade } from 'svelte/transition'
 
-  const controller = new AbortController();
+  const controller = new AbortController()
   const { signal } = controller;
 
   type APOD = {
@@ -26,19 +27,22 @@
     explanation: string
   }
 
-  type QueryInput = {
+  type QueryArguments = {
     signal: AbortSignal
     first_day: Date
     max_day: Date
     offset: number
   }
 
-  type PlaceholderDateRange = {
+  type DateRangeArguments = {
     length: number
     starting_index: number
+    get_style: Function
+    date: Date
+    loading: boolean
   }
   
-  const cache: APOD[][] = [];
+  const cache: APOD[][] = []
 
   let offset: number = 0
 
@@ -53,23 +57,8 @@
   $: max_day = last_day > new Date() ? new Date() : last_day
 
   let rows: number
-  let calendar_start: number
 
   $: rows = Math.ceil((first_day.getDay() + last_day.getDate()) / 7)
-  $: calendar_start = first_day.getDay() + 1 
-
-  let loadingDateRange: PlaceholderDateRange
-  let remainingDateRange: PlaceholderDateRange
-
-  $: loadingDateRange = {
-    length: max_day.getDate(),
-    starting_index: 0,
-  }
-
-  $: remainingDateRange = {
-    length: last_day.getDate() - max_day.getDate(),
-    starting_index: max_day.getDate(),
-  }
 
   let selected: APOD = {
     title: ``,
@@ -80,13 +69,31 @@
     explanation: ``,
   }
 
-  
+  let loading_arguments: DateRangeArguments
+  let remaining_arguments: DateRangeArguments
+
+  $: loading_arguments = {
+    length: max_day.getDate(),
+    starting_index: 0,
+    get_style: ({ i, date, }) => !i && `grid-column-start: ${date.getDay() + 1}`,
+    date: first_day,
+    loading: true,
+  }
+
+  $: remaining_arguments = {
+    length: last_day.getDate() - max_day.getDate(),
+    starting_index: max_day.getDate(),
+    get_style: ({}) => ``,
+    date: first_day,
+    loading: false,
+  }
+
   const query = async ({
     signal,
     first_day,
     max_day,
     offset,
-  }: QueryInput): Promise<APOD[]> => { 
+  }: QueryArguments): Promise<APOD[]> => { 
 
     const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=hIZ20K4ftBKwN1AdggqcZxrIjiquLTRkQlhO611D&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`, { signal })
 
@@ -102,50 +109,20 @@
 
   }
 
-  const incrementOffset = (increment: number): number => offset += increment
+  const increment_offset = (increment: number): number => offset += increment
 
 </script>
 
 <main>
 
+
   <div class="sidebar">
 
-    <div class="heading"> 
-      <h4> NASA Astronomy Picture of the Day Calendar</h4>
-      {#key first_day}
-      <h1> {format_month(first_day)} </h1>
-      {/key}
-    </div>
+    <Heading date={first_day} />
     
-    <div class="controls"> 
-      <button class="up {!offset && `disabled`}"
-        on:click={() => incrementOffset(offset ? -1 : 0)}
-        on:keydown={() => incrementOffset(offset ? -1 : 0)}
-      >
-        <img src={svg_caret_up} alt="" />
-        <p> Next Month </p>
-      </button>
-      <button class="down"
-        on:click={() => incrementOffset(1)}
-        on:keydown={() => incrementOffset(1)}
-      >
-        <img src={svg_caret_down} alt="" />
-        <p> Previous Month </p>
-      </button>
-    </div>
-
-      <div class="info"> 
-          <h2> {selected.title} </h2>
-          <h5> {selected.copyright ?? ``} </h5>
-          <div class="selected-display">
-            {#key selected}
-              <img src={selected.url} alt="" in:fade />
-              <div class="hover-display"> 
-                <p> {selected.explanation} </p>
-              </div>
-            {/key}
-          </div>
-      </div>
+    <Controls {offset} {increment_offset} />
+  
+    <Selected {selected} />
   
   </div>
 
@@ -168,14 +145,7 @@
       offset,
     })}
       
-    {#each loadingDateRange as _, i}
-      <li class="day" style={
-        !i && `grid-column-start: ${calendar_start}
-      `}>
-        <p class="index"> {loadingDateRange.starting_index + i + 1} </p>
-        <img src={loading} alt="" />
-      </li>
-    {/each}
+    <DateRange {...loading_arguments} />
 
     {:then apods}
 
@@ -183,7 +153,7 @@
         
         {#each apods as apod, i}
           <li class="day can-hover" in:fade style={
-            !i && `grid-column-start: ${calendar_start}
+            !i && `grid-column-start: ${first_day.getDay() + 1}
           `}
             on:click={() => selected = apod}
             on:keydown={() => selected = apod}
@@ -201,12 +171,7 @@
 
     {/await}
     
-    {#each remainingDateRange as _, i}
-      <li class="day">    
-        <p class="index"> {remainingDateRange.starting_index + i + 1} </p>
-        <img alt="" />
-      </li>
-    {/each} 
+    <DateRange {...remaining_arguments} />
 
   </ol>
 
@@ -244,144 +209,6 @@
     font-size: 1vw;
   }
 
-  .heading * {
-    width: fit-content;
-    white-space: nowrap;
-  }
-
-  h1 {
-    overflow: hidden;
-
-    margin: 0 auto 0 0;
-
-    font-size: 3em;
-
-    border-right: .15em solid transparent;
-
-    translate: -0.06em 0;
-
-    animation: 
-      typing 0.75s steps(13, end),
-      blink-caret 0.75s step-end infinite;
-  }
-
-  @keyframes typing {
-    from { width: 0 }
-    to { width: 100% }
-  }
-
-  @keyframes blink-caret {
-    from, to { border-color: transparent }
-    50% { border-color: var(--white) }
-  }
-
-  .controls {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  button {
-    display: flex;
-    align-items: center;
-
-    width: fit-content;
-
-    background-color: transparent;
-
-    font-size: 1em;
-
-    border: none;
-
-    cursor: pointer;
-
-    translate: -0.7em 0;
-  }
-
-  button:last-of-type {
-    translate: 0;
-  }
-
-  button img {
-    width: 2.5em;
-
-    filter: var(--filter-white);
-  }
-
-  button p {
-    font-weight: 400;
-  }
-
-  button:not(.disabled):hover p {
-    text-decoration: underline;
-  }
-
-  .info {    
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-
-    margin-top: auto;
-  }
-
-  .info h2, .info h5 {
-    width: fit-content;
-  }
-
-  .selected-display {
-    overflow: hidden;
-
-    position: relative;
-
-    height: 50vh;
-
-    border: 0.15em solid var(--white);
-    border-radius: 0.3em;
-  }
-
-  .selected-display img {
-    height: 100%;
-    width: 100%;
-
-    object-fit: cover;
-
-    transition: 0.5s ease;
-  }
-
-  .selected-display:hover img {
-    scale: 1.1;
-    opacity: 0.3;
-  }
-
-  .selected-display .hover-display {
-    overflow-y: auto;
-
-    font-size: 1.1em;
-
-    cursor: unset;
-
-    scrollbar-width: thin;
-    scrollbar-color: var(--white) var(--dark);
-  }
-
-  .selected-display:hover .hover-display {
-    height: 100%;
-    opacity: 1;
-  }
-
-  .selected-display .hover-display::-webkit-scrollbar {
-    width: 0.5em;
-  }
-
-  .selected-display .hover-display::-webkit-scrollbar-track {
-    background: var(--dark);
-  }
-
-  .selected-display .hover-display::-webkit-scrollbar-thumb {
-    margin: 0.3em;
-
-    background-color: var(--white);
-  }
-
   .calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -392,53 +219,14 @@
     font-size: min(1.5vw, 2.2vh);
   }
 
-  li {
-    position: relative;
-
-    border-radius: 0.5em;
-  }
-
   .day-label {
     text-align: center;
     font-size: 1vw;
     font-weight: 600;
   }
 
-  .day {
-    overflow: hidden;
-
-    aspect-ratio: 1;
-
-    border: 0.1em solid var(--white);
-  }
-
-  .day p {
-    text-shadow: 0 0 0.3em var(--dark);
-  }
-
-  .index {
-    z-index: 2;
-
-    position: absolute;
-    top: 0.2em;
-    left: 0.3em;
-
-    transition: opacity 0.3s ease;
-  }
-
   .can-hover:hover .index {
     opacity: 0;
-  }
-
-  .day img {
-    z-index: 1;
-
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-
-    transition: 0.5s ease;
   }
 
   .can-hover:hover img {
