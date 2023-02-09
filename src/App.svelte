@@ -10,13 +10,17 @@
   import Heading from './Sidebar/Heading.svelte';
   import Controls from './Sidebar/Controls.svelte'
   import Selected from './Sidebar/Selected.svelte'
-
   import DateRange from './Calendar/DateRange.svelte';
 
   import { fade } from 'svelte/transition'
 
   const controller = new AbortController()
   const { signal } = controller;
+
+  type AbortReturn = { 
+    (reason?: any): void
+    (): void
+  }
 
   type APOD = {
     title: string
@@ -46,7 +50,7 @@
 
   let offset: number = 0
 
-  $: offset, (() => controller.abort)();
+  $: offset, ((): AbortReturn => controller.abort)();
 
   let first_day: Date
   let last_day: Date
@@ -75,7 +79,7 @@
   $: loading_arguments = {
     length: max_day.getDate(),
     starting_index: 0,
-    get_style: ({ i, date, }) => !i && `grid-column-start: ${date.getDay() + 1}`,
+    get_style: ({ i, date, }): string => !i && `grid-column-start: ${date.getDay() + 1}`,
     date: first_day,
     loading: true,
   }
@@ -83,7 +87,7 @@
   $: remaining_arguments = {
     length: last_day.getDate() - max_day.getDate(),
     starting_index: max_day.getDate(),
-    get_style: ({}) => ``,
+    get_style: ({}): string => ``,
     date: first_day,
     loading: false,
   }
@@ -150,7 +154,6 @@
     {:then apods}
 
       {#key offset}
-        
         {#each apods as apod, i}
           <li class="day can-hover" in:fade style={
             !i && `grid-column-start: ${first_day.getDay() + 1}
@@ -166,7 +169,6 @@
             </div>
           </li>
         {/each} 
-
       {/key}
 
     {/await}
