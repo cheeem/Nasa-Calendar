@@ -1,6 +1,6 @@
 <script lang="ts">
 
-  import loader from '/src/assets/loader.gif'
+  import loader from './assets/loader.gif'
 
   export let length: number
   export let starting_index: number
