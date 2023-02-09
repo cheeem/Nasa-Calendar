@@ -1,15 +1,8 @@
 <script lang="ts"> 
 
-  import { fade } from 'svelte/transition'
+  import type { APOD } from '../utils/types'
 
-  type APOD = {
-    title: string
-    date: string
-    url: string
-    hdurl: string
-    copyright: string
-    explanation: string
-  }
+  import { fade } from 'svelte/transition'
 
   export let selected: APOD
   

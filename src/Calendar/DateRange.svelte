@@ -4,14 +4,14 @@
 
   export let length: number
   export let starting_index: number
-  export let get_style: Function
+  export let style: (i: number, date: Date) => string = (i: number, date: Date) => ``
   export let date: Date
-  export let loading: boolean
+  export let loading: boolean = false
 
 </script>
 
 {#each { length } as _, i}
-  <li class="day" style={get_style({ i, date, })}>
+  <li class="day" style={style(i, date)}>
     <p class="index"> {starting_index + i + 1} </p>
     {#if loading}
       <img src={loader} alt="" />

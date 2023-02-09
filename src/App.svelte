@@ -1,5 +1,11 @@
 <script lang="ts">
 
+  import type { 
+    APOD, 
+    DateRangeArguments,
+    QueryArguments,
+  } from './utils/types'
+
   import { 
     get_first_day, 
     get_last_day, 
@@ -16,41 +22,12 @@
 
   const controller = new AbortController()
   const { signal } = controller;
-
-  type AbortReturn = { 
-    (reason?: any): void
-    (): void
-  }
-
-  type APOD = {
-    title: string
-    date: string
-    url: string
-    hdurl: string
-    copyright: string
-    explanation: string
-  }
-
-  type QueryArguments = {
-    signal: AbortSignal
-    first_day: Date
-    max_day: Date
-    offset: number
-  }
-
-  type DateRangeArguments = {
-    length: number
-    starting_index: number
-    get_style: Function
-    date: Date
-    loading: boolean
-  }
   
   const cache: APOD[][] = []
 
   let offset: number = 0
 
-  $: offset, ((): AbortReturn => controller.abort)();
+  $: offset, (() => controller.abort)();
 
   let first_day: Date
   let last_day: Date
@@ -79,17 +56,15 @@
   $: loading_arguments = {
     length: max_day.getDate(),
     starting_index: 0,
-    get_style: ({ i, date, }): string => !i && `grid-column-start: ${date.getDay() + 1}`,
     date: first_day,
+    style: (i, date) => !i && `grid-column-start: ${date.getDay() + 1}`,
     loading: true,
   }
 
   $: remaining_arguments = {
     length: last_day.getDate() - max_day.getDate(),
     starting_index: max_day.getDate(),
-    get_style: ({}): string => ``,
     date: first_day,
-    loading: false,
   }
 
   const query = async ({
@@ -97,7 +72,7 @@
     first_day,
     max_day,
     offset,
-  }: QueryArguments): Promise<APOD[]> => { 
+  }: QueryArguments) => { 
 
     const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=hIZ20K4ftBKwN1AdggqcZxrIjiquLTRkQlhO611D&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`, { signal })
 
@@ -113,7 +88,7 @@
 
   }
 
-  const increment_offset = (increment: number): number => offset += increment
+  const increment_offset = (increment: number) => offset += increment
 
 </script>
 
