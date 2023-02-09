@@ -9,14 +9,6 @@ type APOD = {
 
 const pad = (number: number): string => ('00'+number).slice(-2)
 
-export const query = async (input: string): Promise<APOD[]> => { 
-
-    const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=hIZ20K4ftBKwN1AdggqcZxrIjiquLTRkQlhO611D${input}`)
-
-    return res.json()
-
-}
-
 export const get_first_day = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), 1)
 
 export const get_last_day = (date: Date): Date => new Date(date.getFullYear(), date.getMonth()+1, 0)

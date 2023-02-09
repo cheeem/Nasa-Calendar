@@ -1,7 +1,6 @@
 <script lang="ts">
 
   import { 
-    query, 
     get_first_day, 
     get_last_day, 
     format_query_date, 
@@ -15,6 +14,9 @@
 
   import { fade } from 'svelte/transition'
 
+  const controller = new AbortController();
+  const { signal } = controller;
+
   type APOD = {
     title: string
     date: string
@@ -24,9 +26,23 @@
     explanation: string
   }
 
-  let cache: APOD[][] = [];
+  type QueryInput = {
+    signal: AbortSignal
+    first_day: Date
+    max_day: Date
+    offset: number
+  }
+
+  type PlaceholderDateRange = {
+    length: number
+    starting_index: number
+  }
+  
+  const cache: APOD[][] = [];
 
   let offset: number = 0
+
+  $: offset, (() => controller.abort)();
 
   let first_day: Date
   let last_day: Date
@@ -35,6 +51,25 @@
   $: first_day = get_first_day(get_offset_date(offset))
   $: last_day =  get_last_day(get_offset_date(offset))
   $: max_day = last_day > new Date() ? new Date() : last_day
+
+  let rows: number
+  let calendar_start: number
+
+  $: rows = Math.ceil((first_day.getDay() + last_day.getDate()) / 7)
+  $: calendar_start = first_day.getDay() + 1 
+
+  let loadingDateRange: PlaceholderDateRange
+  let remainingDateRange: PlaceholderDateRange
+
+  $: loadingDateRange = {
+    length: max_day.getDate(),
+    starting_index: 0,
+  }
+
+  $: remainingDateRange = {
+    length: last_day.getDate() - max_day.getDate(),
+    starting_index: max_day.getDate(),
+  }
 
   let selected: APOD = {
     title: ``,
@@ -45,17 +80,29 @@
     explanation: ``,
   }
 
-  const process = async (res: Promise<APOD[]>): Promise<APOD[]> => {
+  
+  const query = async ({
+    signal,
+    first_day,
+    max_day,
+    offset,
+  }: QueryInput): Promise<APOD[]> => { 
 
-    const apods = await res
+    const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=hIZ20K4ftBKwN1AdggqcZxrIjiquLTRkQlhO611D&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`, { signal })
 
-    selected = apods[apods.length-1]
+    const apods = await res.json()
 
-    cache[offset] = apods;
+    if(signal.aborted) return 
+
+    if(!offset) selected = apods[apods.length-1]
+
+    cache[offset] = apods
 
     return apods
 
   }
+
+  const incrementOffset = (increment: number): number => offset += increment
 
 </script>
 
@@ -72,15 +119,15 @@
     
     <div class="controls"> 
       <button class="up {!offset && `disabled`}"
-        on:click={() => offset -= offset ? 1 : 0}
-        on:keydown={() => offset -= offset ? 1 : 0}
+        on:click={() => incrementOffset(offset ? -1 : 0)}
+        on:keydown={() => incrementOffset(offset ? -1 : 0)}
       >
         <img src={svg_caret_up} alt="" />
         <p> Next Month </p>
       </button>
       <button class="down"
-        on:click={() => offset += 1}
-        on:keydown={() => offset += 1}
+        on:click={() => incrementOffset(1)}
+        on:keydown={() => incrementOffset(1)}
       >
         <img src={svg_caret_down} alt="" />
         <p> Previous Month </p>
@@ -103,7 +150,7 @@
   </div>
 
   <ol class="calendar" style={`
-    grid-template-rows: 6vh repeat(${Math.ceil((first_day.getDay() + last_day.getDate()) / 7)}, 1fr);
+    grid-template-rows: 6vh repeat(${rows}, 1fr);
   `}>
 
     <li class="day-label">Sunday</li>
@@ -114,16 +161,21 @@
     <li class="day-label">Friday</li>
     <li class="day-label">Saturday</li>
 
-    {#await cache?.[offset] ?? process(query(`&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`))}
+    {#await cache?.[offset] ?? query({
+      signal, 
+      first_day, 
+      max_day, 
+      offset,
+    })}
       
-    {#each { length: max_day.getDate() } as _, i}
-        <li class="day" style={
-          !i && `grid-column-start: ${first_day.getDay() + 1}
-        `}>
-          <p class="index"> {i + 1} </p>
-          <img src={loading} alt="" />
-        </li>
-        {/each}
+    {#each loadingDateRange as _, i}
+      <li class="day" style={
+        !i && `grid-column-start: ${calendar_start}
+      `}>
+        <p class="index"> {loadingDateRange.starting_index + i + 1} </p>
+        <img src={loading} alt="" />
+      </li>
+    {/each}
 
     {:then apods}
 
@@ -131,7 +183,7 @@
         
         {#each apods as apod, i}
           <li class="day can-hover" in:fade style={
-            !i && `grid-column-start: ${first_day.getDay() + 1}
+            !i && `grid-column-start: ${calendar_start}
           `}
             on:click={() => selected = apod}
             on:keydown={() => selected = apod}
@@ -149,9 +201,9 @@
 
     {/await}
     
-    {#each { length: last_day.getDate() - max_day.getDate() } as _, i}
+    {#each remainingDateRange as _, i}
       <li class="day">    
-        <p class="index"> {i + 1 + max_day.getDate()} </p>
+        <p class="index"> {remainingDateRange.starting_index + i + 1} </p>
         <img alt="" />
       </li>
     {/each} 
