@@ -2,7 +2,7 @@
 
   import { format_month } from "../utils/data";
 
-  export let date;
+  export let date: Date;
 
 </script>
 

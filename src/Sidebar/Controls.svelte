@@ -1,7 +1,7 @@
 <script lang="ts">
 
-  import svg_caret_up from './assets/Caret Up.svg'
-  import svg_caret_down from './assets/Caret Down.svg'
+  import svg_caret_up from '../assets/Caret up.svg'
+  import svg_caret_down from '../assets/Caret down.svg'
 
   export let offset: number
   export let increment_offset: Function
