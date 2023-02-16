@@ -260,7 +260,7 @@
         "selected selected"
       ;
 
-      font-size: max(0.75rem, 1.25vw);
+      font-size: max(0.75rem, 1.8vh);
     }
 
   }
@@ -279,7 +279,7 @@
         "selected"
       ;
 
-      font-size: max(0.65rem, 2.5vw);
+      font-size: max(0.65rem, 2vw);
     }
 
   }
