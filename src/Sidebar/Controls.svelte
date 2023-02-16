@@ -87,7 +87,8 @@
     text-decoration: underline;
   }
 
-  @media (max-aspect-ratio: 1) {
+  @media (max-aspect-ratio: 1)
+    or (max-width: 480px) {
 
     .month-controls {
       display: none;
