@@ -6,7 +6,7 @@
 
 </script>
 
-<div class="heading"> 
+<div id="heading"> 
   <h4> NASA Astronomy Picture of the Day Calendar</h4>
   {#key date}
       <h1> {format_month(date)} </h1>
@@ -15,7 +15,11 @@
 
 <style>
 
-  .heading * {
+  #heading {
+    grid-area: heading;
+  }
+
+  #heading * {
     width: fit-content;
     white-space: nowrap;
   }

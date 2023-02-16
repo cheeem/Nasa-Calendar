@@ -1,12 +1,3 @@
-type APOD = {
-    title: string
-    date: string
-    url: string
-    hdurl: string
-    copyright: string
-    explanation: string
-}
-
 const pad = (number: number) => ('00'+number).slice(-2)
 
 export const get_first_day = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)

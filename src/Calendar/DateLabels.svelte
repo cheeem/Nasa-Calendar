@@ -24,4 +24,12 @@
     font-weight: 600;
   }
 
+  @media (max-aspect-ratio: 33/20) {
+
+    li {
+      font-size: 1.5vw;
+    }
+
+  }
+
 </style>

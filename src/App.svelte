@@ -1,11 +1,5 @@
 <script lang="ts">
 
-  import type { 
-    APOD, 
-    DateRangeArguments,
-    QueryArguments,
-  } from './utils/types'
-
   import { 
     get_first_day, 
     get_last_day, 
@@ -13,19 +7,36 @@
     get_offset_date,
   } from './utils/data.js'
 
-  import Heading from './Sidebar/Heading.svelte';
+  import Heading from './Sidebar/Heading.svelte'
   import Controls from './Sidebar/Controls.svelte'
   import Selected from './Sidebar/Selected.svelte'
-  import DateRange from './Calendar/DateRange.svelte';
+  import DateLabels from './Calendar/DateLabels.svelte'
+  import DateRange from './Calendar/DateRange.svelte'
 
   import { fade } from 'svelte/transition'
 
+  type APOD = {
+    title: string
+    date: string
+    url: string
+    hdurl: string
+    copyright: string
+    explanation: string
+  }
+
+  type QueryArguments = {
+    signal: AbortSignal
+    first_day: Date
+    max_day: Date
+    offset: number
+  }
+
   const controller = new AbortController()
-  const { signal } = controller;
+  const { signal } = controller
   
   const cache: APOD[][] = []
-
   let offset: number = 0
+  let selected: number = 0
 
   $: offset, (() => controller.abort)();
 
@@ -38,20 +49,61 @@
   $: max_day = last_day > new Date() ? new Date() : last_day
 
   let rows: number
+  let flex: number
 
   $: rows = Math.ceil((first_day.getDay() + last_day.getDate()) / 7)
+  $: flex = rows === 6 ? 5 : 8
 
-  let selected: APOD = {
-    title: ``,
-    date: ``,
-    url: ``,
-    hdurl: ``,
-    copyright: ``,
-    explanation: ``,
+  const query = async ({
+    signal,
+    first_day,
+    max_day,
+    offset,
+  }: QueryArguments) => { 
+
+    const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=hIZ20K4ftBKwN1AdggqcZxrIjiquLTRkQlhO611D&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`, { signal })
+
+    const apods = await res.json()
+
+    if(signal.aborted) return 
+
+    if(!offset) selected = max_day.getDate()-1
+
+    cache[offset] = apods
+
+    return apods
+
   }
 
-  let loading_arguments: DateRangeArguments
-  let remaining_arguments: DateRangeArguments
+  const increment_offset = (increment: number) => {
+
+    offset += increment
+
+    let last = get_last_day(get_offset_date(offset))
+
+    let max_index = (last > new Date() ? new Date() : last).getDate()
+
+    selected = increment+1 ? max_index-1 : 0
+
+  }
+
+  const set_selected = (input: number) => {
+
+    if(input === -1) return increment_offset(1)
+
+    if(input === max_day.getDate()) return increment_offset(offset ? -1 : 0)
+
+    selected = input
+
+  }
+
+  $: controls_arguments = {
+    offset, 
+    increment_offset,
+    selected,
+    set_selected,
+    isLast: !offset && (selected === max_day.getDate()-1),
+  }
 
   $: loading_arguments = {
     length: max_day.getDate(),
@@ -67,55 +119,26 @@
     date: first_day,
   }
 
-  const query = async ({
-    signal,
-    first_day,
-    max_day,
-    offset,
-  }: QueryArguments) => { 
-
-    const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=hIZ20K4ftBKwN1AdggqcZxrIjiquLTRkQlhO611D&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`, { signal })
-
-    const apods = await res.json()
-
-    if(signal.aborted) return 
-
-    if(!offset) selected = apods[apods.length-1]
-
-    cache[offset] = apods
-
-    return apods
-
-  }
-
-  const increment_offset = (increment: number) => offset += increment
-
 </script>
 
 <main>
 
-
-  <div class="sidebar">
+  <div id="sidebar">
 
     <Heading date={first_day} />
-    
-    <Controls {offset} {increment_offset} />
+
+    <Controls {...controls_arguments} />
   
-    <Selected {selected} />
+    <Selected {...cache?.[offset]?.[selected]} />
   
   </div>
 
-  <ol class="calendar" style={`
+  <ol id="calendar" style={`
     grid-template-rows: 6vh repeat(${rows}, 1fr);
+    flex: ${flex};
   `}>
 
-    <li class="day-label">Sunday</li>
-    <li class="day-label">Monday</li>
-    <li class="day-label">Tueday</li>
-    <li class="day-label">Wednesday</li>
-    <li class="day-label">Thursday</li>
-    <li class="day-label">Friday</li>
-    <li class="day-label">Saturday</li>
+    <DateLabels />
 
     {#await cache?.[offset] ?? query({
       signal, 
@@ -125,22 +148,22 @@
     })}
       
     <DateRange {...loading_arguments} />
-
+    
     {:then apods}
 
       {#key offset}
-        {#each apods as apod, i}
+        {#each apods as { url, title, date, }, i}
           <li class="day can-hover" in:fade style={
             !i && `grid-column-start: ${first_day.getDay() + 1}
           `}
-            on:click={() => selected = apod}
-            on:keydown={() => selected = apod}
+            on:click={() => set_selected(i)}
+            on:keydown={() => set_selected(i)}
           >
             <p class="index"> {i + 1} </p> 
-            <img src={apod.url} alt="" />
+            <img src={url} alt="" />
             <div class="hover-display"> 
-              <p class="title"> {apod.title} </p>
-              <p class="date"> {apod.date} </p>
+              <p class="title"> {title} </p>
+              <p class="date"> {date} </p>
             </div>
           </li>
         {/each} 
@@ -156,6 +179,11 @@
 
 <style>
 
+  :root {
+    --vp-padding-y: 4vh;
+    --vp-height: calc(100vh - var(--vp-padding-y) * 2);
+  }
+
   main {
     overflow: hidden;
 
@@ -167,7 +195,7 @@
 
     height: 100vh;
 
-    padding: 4vh 6.5vw;
+    padding: var(--vp-padding-y) 6.5vw;
 
     background-color: var(--dark);
     background-image: url(./assets/background.png);
@@ -176,30 +204,26 @@
     background-position: center;
   }
 
-  .sidebar {
-    display: flex;
-    flex-direction: column;
+  #sidebar {
+    flex: 3;
+    display: grid;
+    grid-template-areas: 
+      "heading"
+      "controls"
+      "selected"
+    ;
     gap: 1.5em;
-
-    width: 22.5vw;
 
     font-size: 1vw;
   }
 
-  .calendar {
+  #calendar {
+    flex: 8;
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 0.6em;
 
-    min-width: 50%;
-
     font-size: min(1.5vw, 2.2vh);
-  }
-
-  .day-label {
-    text-align: center;
-    font-size: 1vw;
-    font-weight: 600;
   }
 
   .can-hover:hover .index {
@@ -214,6 +238,59 @@
   .can-hover:hover .hover-display {
     height: 100%;
     opacity: 1;
+  }
+
+  @media (max-aspect-ratio: 33/20) {
+
+    main {
+      display: grid;
+
+      grid-auto-columns: 1fr;
+
+      height: unset;
+    }
+
+    main > * {
+      min-height: var(--vp-height);
+    }
+
+    #sidebar {
+      grid-template-areas: 
+        "heading  controls"
+        "selected selected"
+      ;
+
+      font-size: max(0.75rem, 1.25vw);
+    }
+
+  }
+
+  @media (max-aspect-ratio: 1) {
+
+    #calendar {
+      display: none;
+    }
+
+    #sidebar {
+      grid-template-areas: 
+        "heading"
+        "controls"
+        "selected"
+      ;
+
+      font-size: max(0.65rem, 2.5vw);
+    }
+
+  }
+
+  @media (max-aspect-ratio: 2)
+    and (min-width: 300px) 
+    and (max-width: 480px)  {
+
+    #sidebar {
+      font-size: max(0.75rem, 2.5vw);
+    }
+
   }
 
 </style>

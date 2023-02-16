@@ -1,25 +1,33 @@
 <script lang="ts"> 
 
-  import type { APOD } from '../utils/types'
-
   import { fade } from 'svelte/transition'
 
-  export let selected: APOD
+  export let copyright: string = ``
+  export let title: string = ``
+  export let date: string = ``
+  export let url: string = ``
+  export let explanation: string = ``
+
+  $: copyright = copyright ? `(${copyright})` : ``
+  $: if(!title) title = ``
+  $: if(!date) date = ``
+  $: if(!url) url = ``
+  $: if(!explanation) explanation = ``
   
 </script>
 
-<div class="selected"> 
-  <h2> {selected.title} </h2>
-  <h5> {selected.copyright ?? ``} </h5>
+<div id="selected"> 
+  <h2> {title} </h2>
+  <h5> {date} {copyright} </h5>
   <div class="selected-display">
-    {#key selected}
-      {#if selected.url}
-        <img src={selected.url} alt="" in:fade />
+    {#key url}
+      {#if url}
+        <img src={url} alt="" in:fade />
       {:else}
         <img alt="" />
       {/if}
       <div class="hover-display"> 
-        <p> {selected.explanation} </p>
+        <p> {explanation} </p>
       </div>
     {/key}
   </div>
@@ -27,15 +35,13 @@
 
 <style>
 
-  .selected {    
-    display: flex;
-    flex-direction: column;
+  #selected { 
+    grid-area: selected;   
+    display: grid;
     gap: 1em;
-
-    margin-top: auto;
   }
 
-  .selected h2, .selected h5 {
+  #selected h2, #selected h5 {
     width: fit-content;
   }
 
@@ -46,7 +52,7 @@
 
     height: 50vh;
 
-    border: 0.15em solid var(--white);
+    border: 0.1rem solid var(--white);
     border-radius: 0.3em;
   }
 
@@ -92,6 +98,22 @@
     margin: 0.3em;
 
     background-color: var(--white);
+  }
+
+  @media (max-aspect-ratio: 33/20) {
+
+    #selected {
+      gap: 0;
+    }
+
+  }
+
+  @media (max-aspect-ratio: 1) {
+
+    #selected {
+      font-size: 1.1em
+    }
+
   }
   
 </style>
