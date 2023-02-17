@@ -61,38 +61,51 @@
     offset,
   }: QueryArguments) => { 
 
+    //query given the date bounds of the given month
     const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=hIZ20K4ftBKwN1AdggqcZxrIjiquLTRkQlhO611D&start_date=${format_query_date(first_day)}&end_date=${format_query_date(max_day)}`, { signal })
 
+    //await the array of apods
     const apods = await res.json()
 
+    //return if the fetch has been cancelled
     if(signal.aborted) return 
 
+    //on the initial query, set selected to the last apod index
     if(!offset) selected = max_day.getDate()-1
 
+    //cache the array of apods at the given offset index
     cache[offset] = apods
 
+    //return the array of apods
     return apods
 
   }
 
   const increment_offset = (increment: number) => {
 
+    //increment the offset
     offset += increment
 
+    //find the last date of the newly upated offset
     let last = get_last_day(get_offset_date(offset))
 
-    let max_index = (last > new Date() ? new Date() : last).getDate()
+    //find the index of the last apod in the month
+    let max_index = (last > new Date() ? new Date() : last).getDate()-1
 
-    selected = increment+1 ? max_index-1 : 0
+    //set selected to the max index if the increment is positive, or 0 if it's negative
+    selected = increment > 0 ? max_index : 0
 
   }
 
   const set_selected = (input: number) => {
 
+    //if the input is too low, increment the offset by 1 and return
     if(input === -1) return increment_offset(1)
 
+    //if the input is too high, increment the offset by -1 only if the offset is not 0 and return
     if(input === max_day.getDate()) return increment_offset(offset ? -1 : 0)
 
+    //otherwise, set selected to the input
     selected = input
 
   }

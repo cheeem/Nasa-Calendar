@@ -1,15 +1,17 @@
 <script lang="ts">
 
-  import { format_month } from "../utils/data";
+  import { format_month } from "../utils/data"
 
-  export let date: Date;
+  export let date: Date
 
 </script>
 
 <div id="heading"> 
   <h4> NASA Astronomy Picture of the Day Calendar</h4>
   {#key date}
-      <h1> {format_month(date)} </h1>
+      <div class="heading-month-wrapper">
+        <h1> {format_month(date)} </h1>
+      </div>
   {/key}
 </div>
 
@@ -17,6 +19,9 @@
 
   #heading {
     grid-area: heading;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   #heading * {
@@ -26,8 +31,6 @@
 
   h1 {
     overflow: hidden;
-
-    margin: 0 auto 0 0;
 
     font-size: 3em;
 
